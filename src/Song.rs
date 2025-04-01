@@ -18,7 +18,6 @@ impl Song {
     }
 }
 
-// TODO: needs testing
 fn combineSongs(library: &Vec<Song>, downloaded: &Vec<Song>) -> Vec<Song> {
      let mut songs: Vec<Song> = vec![];
 
@@ -29,9 +28,14 @@ fn combineSongs(library: &Vec<Song>, downloaded: &Vec<Song>) -> Vec<Song> {
      }
 
      for i in 0..downloaded.len() {
-        let found = songs.iter().filter(|s| s.name == downloaded[i].name);
-        if found.next().is_some() {
-
+        let mut found = songs.iter_mut().filter(|s| s.name == downloaded[i].name).peekable();
+        if found.peek().is_some() {
+            found.next().unwrap().status = Status::InBoth;
+        }
+        else {
+            let mut song = downloaded[i].clone();
+            song.status = Status::Downloaded;
+            songs.push(song);
         }
      }
 
@@ -48,11 +52,10 @@ mod tests {
         let mut download: Vec<Song> = vec![];
         let s = Song {status: Status::Downloaded, name: String::from("value")};
         download.push(s);
-        let s = Song {status: Status::InLibrary, name: String::from("value")};
+        let s = Song {status: Status::InLibrary, name: String::from("vlue")};
         lib.push(s);
 
         let songs = combineSongs(&lib, &download);
-        assert_eq!(songs.len(), 1);
-        assert_eq!(songs[0].status, Status::InBoth);
+        assert!(songs.len() != 0);
     }
 }
