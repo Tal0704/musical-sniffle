@@ -58,6 +58,7 @@ impl Song {
         };
     }
 
+// TODO: Get information from response and put it inside the relevant Song fields
     fn getMetadata(&mut self) {
         let url = format!("https://musicbrainz.org/ws/2/release/?query=artist:{}%20AND%20release:{}&fmt=json", toUri(self.artist.clone()), toUri(self.album.clone()));
         let res = fetchUrl(url).expect("Couldn't fetch URL");
