@@ -6,6 +6,7 @@ use std::fs::File;
 use std::io::Read;
 use audiotags::{Tag, Picture, MimeType, Album};
 use reqwest::blocking::Client;
+use yt_dlp::Youtube;
 mod Song;
 
 
