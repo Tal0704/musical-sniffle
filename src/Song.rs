@@ -18,8 +18,8 @@ pub struct Song {
     pub artist: String,
     pub album: String,
     pub URL: String,
-    pub year: u8,
-    pub trackNumber: u8,
+    pub year: i64,
+    pub trackNumber: usize,
     pub imageUrl: String,
 }
 
@@ -58,11 +58,30 @@ impl Song {
         };
     }
 
-// TODO: Get information from response and put it inside the relevant Song fields
     fn getMetadata(&mut self) {
-        let url = format!("https://musicbrainz.org/ws/2/release/?query=artist:{}%20AND%20release:{}&fmt=json", toUri(self.artist.clone()), toUri(self.album.clone()));
+        let url = format!("https://musicbrainz.org/ws/2/recording?query=title:{}%20AND%20artist:{}%20AND%20release:{}&fmt=json", toUri(self.name.clone()), toUri(self.artist.clone()), toUri(self.album.clone()));
         let res = fetchUrl(url).expect("Couldn't fetch URL");
-        println!("{res}");
+
+        let recordings = res.get("recordings").and_then(|recording| recording.as_array()).unwrap();
+        let mut minYear = std::i64::MAX;
+        for recording in recordings {
+            if recording["score"].as_i64() > Some(85) {
+                let yearRaw = recording["first-release-date"].as_str().unwrap_or_else(|| "0000");
+                let year = yearRaw[0..4].parse::<i64>().expect("Couldn't convert to i64");
+                if year > 0 {
+                    if year < minYear && minYear > 0 {
+                        minYear = year as i64;
+                        if self.trackNumber == 0 {
+                            if let Some(offset) = recording["releases"][0]["media"][0]["track-offset"].as_i64() {
+                                self.trackNumber = offset as usize + 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        println!("{}", self.trackNumber);
+        self.year = minYear;
     }
 }
 
@@ -109,11 +128,29 @@ mod tests {
 
     #[test]
     fn testConvertToUri() {
-        let mut song = Song::new();
-        song.name = String::from("Master of puppets");
-        song.artist = String::from("Metallica");
-        song.album = String::from("Master of puppets");
-        song.getMetadata();
-        assert_eq!(song.name.len(), 16)
+        let mut songs: Vec<Song> = vec![Song::new(); 8];
+        
+        songs[0].name = String::from("Battery");
+        songs[1].name = String::from("Master of Puppets");
+        songs[2].name = String::from("The Thing That Should Not Be");
+        songs[3].name = String::from("Welcome Home (Sanitarium)");
+        songs[4].name = String::from("Disposable Heroes");
+        songs[5].name = String::from("Leper Messiah");
+        songs[6].name = String::from("Orion");
+        songs[7].name = String::from("Damage, Inc.");
+
+        for i in 0..songs.len() {
+            songs[i].artist = String::from("Metallica");
+            songs[i].album = String::from("Master of Puppets");
+            songs[i].trackNumber = i + 1;
+        }
+
+        let songsBefore = songs.clone();
+
+        for i in 0..songs.len() {
+            songs[i].getMetadata();
+            println!("{}", songs[i].name);
+            assert_eq!(songs[i].trackNumber, songsBefore[i].trackNumber)
+        }
     }
 }
