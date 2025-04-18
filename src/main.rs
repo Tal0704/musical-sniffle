@@ -9,7 +9,6 @@ use reqwest::blocking::Client;
 use yt_dlp::Youtube;
 mod Song;
 
-
 fn fetchUrl(url: String) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     eprintln!("Fetching {url:?}...");
 
