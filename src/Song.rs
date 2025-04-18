@@ -16,7 +16,6 @@ pub struct Song {
     pub father: *mut Album,
     pub status: Status,
     pub name: String,
-    pub artist: String,
     pub URL: String,
     pub trackNumber: usize,
     pub imageUrl: String,
@@ -50,7 +49,6 @@ impl Song {
             status: Status::InBoth,
             father: std::ptr::null_mut(),
             name: String::from(""),
-            artist: String::from(""),
             URL: String::from(""),
             imageUrl: String::from(""),
             trackNumber: 0,
@@ -61,7 +59,7 @@ impl Song {
         unsafe {
             let url = format!("https://musicbrainz.org/ws/2/recording?query=title:{}%20AND%20artist:{}%20AND%20release:{}&fmt=json"
                 , toUri(self.name.clone())
-                , toUri(self.artist.clone())
+                , toUri((*self.father).artist.clone())
                 , toUri((*self.father).name.clone()));
 
             let res = fetchUrl(url).expect("Couldn't fetch URL");
@@ -119,6 +117,18 @@ pub struct Album {
     pub songs: Vec<Song>,
     pub name: String,
     pub year: i64,
+    pub artist: String,
+}
+
+impl Album {
+    pub fn new() -> Album {
+        return Album {
+            songs: vec![],
+            name: String::from(""),
+            artist: String::from(""),
+            year: 0,
+        };
+    }
 }
 
 #[cfg(test)]
@@ -151,13 +161,9 @@ mod tests {
         songs[6].name = String::from("Orion");
         songs[7].name = String::from("Damage, Inc.");
 
-        let mut album: Album = Album { songs: songs.clone(), name: String::from("Metallica"), year: 1986 };
+        let mut album: Album = Album { songs: songs.clone(), name: String::from("Master of Puppets"), year: 1986, artist: String::from("Metallica")};
         for i in 0..songs.len() {
             songs[i].father = &mut album;
-            songs[i].artist = String::from("Metallica");
-            unsafe {
-                (*songs[i].father).name = String::from("Master of Puppets");
-            }
             songs[i].trackNumber = i + 1;
         }
 
