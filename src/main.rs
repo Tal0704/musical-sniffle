@@ -68,20 +68,90 @@ fn parseName(line: String) -> Option<String> {
         )
 }
 
-fn parseThumbnail(_line: String) -> Option<String> {
-    return Some(String::from(""))
+fn parseThumbnail(line: String) -> Option<String> {
+    if line.len() == 0 || !line.starts_with("## [") {
+        return None;
+    }
+
+    let mut i: usize = 0;
+    while line.chars().nth(i).unwrap() != ']' && i < line.len() {
+        i += 1;
+    }
+
+    while line.chars().nth(i).unwrap() != '(' && i < line.len() {
+        i += 1;
+    }
+
+    let mut j: usize = i;
+    while line.chars().nth(j).unwrap() != ')' && j < line.len() {
+        j += 1;
+    }
+
+    println!("{} | {}", line.len(), j);
+    return Some(
+        line.chars()
+        .into_iter()
+        .skip(i + 1)
+        .take(j - i - 1)
+        .collect()
+    )
 }
 
-fn parseAlbum(_line: String) -> Option<String> {
-    return Some(String::from(""))
+fn parseAlbum(line: String) -> Option<String> {
+    if line.len() == 0 || !line.starts_with("## ") {
+        return None;
+    }
+
+    let mut i: usize = 4;
+    while line.chars().nth(i).unwrap() != ']' && i < line.len() {
+        i += 1;
+    }
+
+    return Some(
+        line.chars()
+        .skip(4)
+        .take(i - 4)
+        .collect()
+    )
 }
 
-fn parseLink(_line: String) -> Option<String> {
-    return Some(String::from(""))
+fn parseLink(line: String) -> Option<String> {
+    if line.len() == 0 || !line.starts_with("[") {
+        return None;
+    }
+
+    let mut i: usize = 0;
+    while line.chars().nth(i).unwrap() != ']' && i < line.len() {
+        i += 1;
+    }
+    while line.chars().nth(i).unwrap() != '(' && i < line.len() {
+        i += 1;
+    }
+
+    let mut j: usize = i;
+    while line.chars().nth(j).unwrap() != ')' && j < line.len() {
+        j += 1;
+    }
+
+    return Some(
+        line.chars()
+        .skip(i + 1)
+        .take(j - i - 1)
+        .collect()
+    )
 }
 
-fn parseArtist(_line: String) -> Option<String> {
-    return Some(String::from(""))
+fn parseArtist(line: String) -> Option<String> {
+    if line.len() == 0 || !line.starts_with("# ") {
+        return None;
+    }
+
+    return Some(
+        line.chars()
+        .skip(2)
+        .take(line.len() - 2)
+        .collect()
+    )
 }
 
 fn loadDownloaded(path: Vec<DirEntry>) -> Vec<String> {
@@ -122,10 +192,42 @@ mod tests {
     use super::*;
 
     #[test]
+    fn testParseLink() {
+        let s = String::from("[Battery](https://youtu.be/vA1nlwTbCvg?si=_RvX49cOHer9jrSt)");
+        let parsed = parseLink(s);
+        println!("{}", parsed.clone().unwrap());
+        assert_eq!(parsed, Some(String::from("https://youtu.be/vA1nlwTbCvg?si=_RvX49cOHer9jrSt")));
+    }
+
+    #[test]
     fn testParseName() {
         let s = String::from("[Battery](https://youtu.be/vA1nlwTbCvg?si=_RvX49cOHer9jrSt)");
         let parsed = parseName(s);
         println!("{}", parsed.clone().unwrap());
         assert_eq!(parsed, Some(String::from("Battery")));
+    }
+
+    #[test]
+    fn testParseThumbnail() {
+        let s = String::from("## [Master of Puppets](https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fv13.net%2Fwp-content%2Fuploads%2Fmetallica_-_master_of_puppets.jpg&f=1&nofb=1&ipt=104229cca003b142a34f1f135ba6e3eef8430307945a1074f59334ae39f0086f&ipo=images)");
+        let parsed = parseThumbnail(s);
+        println!("{}", parsed.clone().unwrap());
+        assert_eq!(parsed, Some(String::from("https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fv13.net%2Fwp-content%2Fuploads%2Fmetallica_-_master_of_puppets.jpg&f=1&nofb=1&ipt=104229cca003b142a34f1f135ba6e3eef8430307945a1074f59334ae39f0086f&ipo=images")));
+    }
+
+    #[test]
+    fn testParseAlbum() {
+        let s = String::from("## [Master of Puppets](https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fv13.net%2Fwp-content%2Fuploads%2Fmetallica_-_master_of_puppets.jpg&f=1&nofb=1&ipt=104229cca003b142a34f1f135ba6e3eef8430307945a1074f59334ae39f0086f&ipo=images)");
+        let parsed = parseAlbum(s);
+        println!("{}", parsed.clone().unwrap());
+        assert_eq!(parsed, Some(String::from("Master of Puppets")));
+    }
+
+    #[test]
+    fn testParseArtist() {
+        let s = String::from("# Metallica");
+        let parsed = parseArtist(s);
+        println!("{}", parsed.clone().unwrap());
+        assert_eq!(parsed, Some(String::from("Metallica")));
     }
 }
